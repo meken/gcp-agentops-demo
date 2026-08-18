@@ -1,71 +1,11 @@
-"""Tools for Cymbal Retail Support Agent."""
-
 import datetime
-from typing import Dict, Any, Optional
+from typing import Any
 
-# Mock database of customer orders
-ORDERS_DB: Dict[str, Dict[str, Any]] = {
-    "ORD-1001": {
-        "order_id": "ORD-1001",
-        "customer_id": "CUST-501",
-        "customer_name": "Alice Johnson",
-        "status": "DELIVERED",
-        "order_date": "2026-08-01",
-        "delivery_date": "2026-08-05",
-        "items": [
-            {"sku": "SKU-HEADPHONES-01", "name": "Wireless Noise Cancelling Headphones", "qty": 1, "price": 199.99}
-        ],
-        "total_amount": 199.99,
-        "refund_status": "NONE",
-    },
-    "ORD-1002": {
-        "order_id": "ORD-1002",
-        "customer_id": "CUST-502",
-        "customer_name": "Bob Smith",
-        "status": "IN_TRANSIT",
-        "order_date": "2026-08-15",
-        "estimated_delivery": "2026-08-20",
-        "items": [
-            {"sku": "SKU-KEYBOARD-02", "name": "Ergonomic Mechanical Keyboard", "qty": 1, "price": 129.50},
-            {"sku": "SKU-MOUSE-03", "name": "Precision Wireless Mouse", "qty": 1, "price": 49.99}
-        ],
-        "total_amount": 179.49,
-        "refund_status": "NONE",
-    },
-    "ORD-1003": {
-        "order_id": "ORD-1003",
-        "customer_id": "CUST-503",
-        "customer_name": "Carol Danvers",
-        "status": "DELIVERED",
-        "order_date": "2026-07-10",
-        "delivery_date": "2026-07-14",
-        "items": [
-            {"sku": "SKU-SMARTWATCH-04", "name": "Ultra Fitness Smartwatch", "qty": 1, "price": 249.00}
-        ],
-        "total_amount": 249.00,
-        "refund_status": "REFUNDED",
-    },
-}
-
-# Mock database of product inventory
-INVENTORY_DB: Dict[str, Dict[str, Any]] = {
-    "SKU-HEADPHONES-01": {"name": "Wireless Noise Cancelling Headphones", "stock": 42, "warehouse": "us-central1-a", "price": 199.99},
-    "SKU-KEYBOARD-02": {"name": "Ergonomic Mechanical Keyboard", "stock": 15, "warehouse": "us-east1-b", "price": 129.50},
-    "SKU-MOUSE-03": {"name": "Precision Wireless Mouse", "stock": 88, "warehouse": "us-central1-a", "price": 49.99},
-    "SKU-SMARTWATCH-04": {"name": "Ultra Fitness Smartwatch", "stock": 0, "warehouse": "us-west1-a", "price": 249.00},
-}
-
-# Knowledge base / FAQ entries
-FAQ_DB: Dict[str, str] = {
-    "return_policy": "Cymbal Retail offers a 30-day money-back guarantee on all delivered items. Items must be in original condition.",
-    "shipping_policy": "Standard shipping takes 3-5 business days. Express shipping takes 1-2 business days.",
-    "warranty": "All electronics include a standard 1-year limited manufacturer warranty covering defects in materials and workmanship.",
-    "international_shipping": "We currently ship to the US, Canada, EU, and UK.",
-}
+from . import database
 
 
-def lookup_order(order_id: str) -> Dict[str, Any]:
-    """Looks up customer order details by order ID.
+def lookup_order(order_id: str) -> dict[str, Any]:
+    """Looks up customer order details by order ID from Firestore.
 
     Args:
         order_id: The unique order identifier (e.g. 'ORD-1001').
@@ -73,14 +13,20 @@ def lookup_order(order_id: str) -> Dict[str, Any]:
     Returns:
         A dictionary containing the order details, status, items, and total amount.
     """
-    order = ORDERS_DB.get(order_id.strip().upper())
-    if not order:
-        return {"error": f"Order with ID '{order_id}' was not found in the database."}
-    return {"status": "SUCCESS", "order": order}
+    clean_id = order_id.strip().upper()
+    try:
+        doc = database.get_orders_collection().document(clean_id).get()
+        if not doc.exists:
+            return {
+                "error": f"Order with ID '{order_id}' was not found in the database."
+            }
+        return {"status": "SUCCESS", "order": doc.to_dict()}
+    except Exception as e:
+        return {"error": f"Database error looking up order '{order_id}': {e!s}"}
 
 
-def check_inventory(sku_or_name: str) -> Dict[str, Any]:
-    """Checks the stock availability and warehouse location for a product.
+def check_inventory(sku_or_name: str) -> dict[str, Any]:
+    """Checks the stock availability and warehouse location for a product from Firestore.
 
     Args:
         sku_or_name: Product SKU (e.g. 'SKU-HEADPHONES-01') or common product name keyword.
@@ -88,20 +34,34 @@ def check_inventory(sku_or_name: str) -> Dict[str, Any]:
     Returns:
         A dictionary containing stock level, price, and warehouse location.
     """
-    query = sku_or_name.strip().upper()
-    if query in INVENTORY_DB:
-        return {"status": "SUCCESS", "product": INVENTORY_DB[query]}
+    clean_query = sku_or_name.strip()
+    try:
+        # 1. Exact lookup by SKU
+        sku_doc = (
+            database.get_inventory_collection().document(clean_query.upper()).get()
+        )
+        if sku_doc.exists:
+            return {"status": "SUCCESS", "product": sku_doc.to_dict()}
 
-    # Partial search by name
-    matches = [item for item in INVENTORY_DB.values() if sku_or_name.lower() in item["name"].lower()]
-    if matches:
-        return {"status": "SUCCESS", "matches": matches}
+        # 2. Search by product name keyword across inventory
+        matches = []
+        for doc in database.get_inventory_collection().stream():
+            item = doc.to_dict()
+            if item and clean_query.lower() in item.get("name", "").lower():
+                matches.append(item)
 
-    return {"error": f"No product found matching '{sku_or_name}'."}
+        if matches:
+            return {"status": "SUCCESS", "matches": matches}
+
+        return {"error": f"No product found matching '{sku_or_name}'."}
+    except Exception as e:
+        return {
+            "error": f"Database error checking inventory for '{sku_or_name}': {e!s}"
+        }
 
 
-def process_refund(order_id: str, reason: str, amount: float) -> Dict[str, Any]:
-    """Processes a return and refund for a delivered customer order.
+def process_refund(order_id: str, reason: str, amount: float) -> dict[str, Any]:
+    """Processes a return and refund for an eligible delivered customer order in Firestore.
 
     Args:
         order_id: The unique order identifier (e.g. 'ORD-1001').
@@ -111,37 +71,91 @@ def process_refund(order_id: str, reason: str, amount: float) -> Dict[str, Any]:
     Returns:
         A dictionary with refund confirmation details, transaction ID, and status.
     """
-    order_key = order_id.strip().upper()
-    order = ORDERS_DB.get(order_key)
-    if not order:
-        return {"error": f"Cannot process refund: Order '{order_id}' not found."}
+    clean_id = order_id.strip().upper()
+    try:
+        order_ref = database.get_orders_collection().document(clean_id)
+        doc = order_ref.get()
 
-    if order["status"] != "DELIVERED":
-        return {"error": f"Cannot process refund: Order '{order_id}' status is '{order['status']}'. Only DELIVERED orders are eligible for refund."}
+        if not doc.exists:
+            return {"error": f"Cannot process refund: Order '{order_id}' not found."}
 
-    if order["refund_status"] == "REFUNDED":
-        return {"error": f"Cannot process refund: Order '{order_id}' has already been refunded."}
+        order = doc.to_dict() or {}
 
-    if amount <= 0 or amount > order["total_amount"]:
-        return {"error": f"Invalid refund amount ${amount:.2f}. Must be between $0.01 and the order total ${order['total_amount']:.2f}."}
+        if order.get("status") != "DELIVERED":
+            return {
+                "error": (
+                    f"Cannot process refund: Order '{order_id}' status is '{order.get('status')}'. "
+                    "Only DELIVERED orders are eligible for refund."
+                )
+            }
 
-    # Process refund
-    order["refund_status"] = "REFUNDED"
-    tx_id = f"REF-{datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%d%H%M%S')}"
+        if order.get("refund_status") == "REFUNDED":
+            return {
+                "error": f"Cannot process refund: Order '{order_id}' has already been refunded."
+            }
 
-    return {
-        "status": "APPROVED",
-        "transaction_id": tx_id,
-        "order_id": order_key,
-        "refund_amount": amount,
-        "reason": reason,
-        "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-        "message": f"Refund of ${amount:.2f} successfully issued for {order_key}."
-    }
+        total_amount = float(order.get("total_amount", 0.0))
+        if amount <= 0 or amount > total_amount:
+            return {
+                "error": (
+                    f"Invalid refund amount ${amount:.2f}. "
+                    f"Must be between $0.01 and the order total ${total_amount:.2f}."
+                )
+            }
+
+        # Validate 30-day return window if delivery_date or order_date is present
+        delivery_date_str = order.get("delivery_date") or order.get("order_date")
+        if delivery_date_str:
+            try:
+                delivery_date = datetime.date.fromisoformat(delivery_date_str)
+                days_since_delivery = (datetime.date.today() - delivery_date).days
+                if days_since_delivery > 30:
+                    return {
+                        "error": (
+                            f"Cannot process refund: Order '{order_id}' was delivered on {delivery_date_str} "
+                            f"({days_since_delivery} days ago). Refunds are only permitted within 30 days."
+                        )
+                    }
+            except (ValueError, TypeError):
+                pass  # Fall back to allowing if date parsing is unparseable
+
+        now_utc = datetime.datetime.now(datetime.UTC)
+        tx_id = f"REF-{now_utc.strftime('%Y%m%d%H%M%S')}"
+
+        # Atomically update order and record transaction
+        db = database.get_db()
+        batch = db.batch()
+        batch.update(order_ref, {"refund_status": "REFUNDED", "last_refund_tx": tx_id})
+
+        refund_record_ref = database.get_refunds_collection().document(tx_id)
+        batch.set(
+            refund_record_ref,
+            {
+                "transaction_id": tx_id,
+                "order_id": clean_id,
+                "refund_amount": amount,
+                "reason": reason,
+                "timestamp": now_utc.isoformat(),
+                "status": "APPROVED",
+            },
+        )
+        batch.commit()
+
+        return {
+            "status": "APPROVED",
+            "transaction_id": tx_id,
+            "order_id": clean_id,
+            "refund_amount": amount,
+            "reason": reason,
+            "timestamp": now_utc.isoformat(),
+            "message": f"Refund of ${amount:.2f} successfully issued for {clean_id}.",
+        }
+    except Exception as e:
+        return {"error": f"Database error processing refund for '{order_id}': {e!s}"}
 
 
-def search_product_faq(topic: str) -> Dict[str, Any]:
-    """Searches Cymbal Retail store policies and frequently asked questions.
+def search_product_faq(topic: str) -> dict[str, Any]:
+    """Searches Cymbal Retail store policies and frequently asked questions from Firestore.
 
     Args:
         topic: The topic to look up (e.g. 'return_policy', 'warranty', 'shipping_policy').
@@ -150,12 +164,31 @@ def search_product_faq(topic: str) -> Dict[str, Any]:
         A dictionary containing the policy statement and relevant details.
     """
     topic_clean = topic.strip().lower().replace(" ", "_")
-    for key, text in FAQ_DB.items():
-        if key in topic_clean or topic_clean in key:
-            return {"topic": key, "details": text}
+    try:
+        # 1. Exact topic document lookup
+        doc = database.get_faqs_collection().document(topic_clean).get()
+        if doc.exists:
+            data = doc.to_dict() or {}
+            return {
+                "topic": data.get("topic", topic_clean),
+                "details": data.get("details", ""),
+            }
 
-    return {
-        "topic": topic,
-        "available_topics": list(FAQ_DB.keys()),
-        "details": "General policy: Please contact support@cymbalretail.example.com for specialized inquiries."
-    }
+        # 2. Substring matching across all FAQ documents
+        all_topics = []
+        for faq_doc in database.get_faqs_collection().stream():
+            data = faq_doc.to_dict() or {}
+            key = data.get("topic", faq_doc.id)
+            all_topics.append(key)
+            if key in topic_clean or topic_clean in key:
+                return {"topic": key, "details": data.get("details", "")}
+
+        return {
+            "topic": topic,
+            "available_topics": all_topics,
+            "details": (
+                "General policy: Please contact support@cymbalretail.example.com for specialized inquiries."
+            ),
+        }
+    except Exception as e:
+        return {"error": f"Database error searching FAQ for '{topic}': {e!s}"}
