@@ -1,10 +1,8 @@
-
 import argparse
 import datetime
 import os
 import sys
-
-from typing import Any, Dict, Optional
+from typing import Any
 
 from google.cloud import firestore
 
@@ -18,8 +16,8 @@ DEFAULT_REFERENCE_DATE = datetime.date(2026, 8, 18)
 
 
 def get_firestore_client(
-    project: Optional[str] = None,
-    database: Optional[str] = None,
+    project: str | None = None,
+    database: str | None = None,
 ) -> firestore.Client:
     """Creates a Firestore client without depending on application modules.
 
@@ -35,7 +33,9 @@ def get_firestore_client(
     return firestore.Client(project=proj, database=db_name)
 
 
-def get_seed_orders(base_date: Optional[datetime.date] = None) -> Dict[str, Dict[str, Any]]:
+def get_seed_orders(
+    base_date: datetime.date | None = None,
+) -> dict[str, dict[str, Any]]:
     """Generates order seed data with parameterized relative dates.
 
     Args:
@@ -111,7 +111,7 @@ def get_seed_orders(base_date: Optional[datetime.date] = None) -> Dict[str, Dict
     }
 
 
-def get_seed_inventory() -> Dict[str, Dict[str, Any]]:
+def get_seed_inventory() -> dict[str, dict[str, Any]]:
     """Generates product inventory seed data.
 
     Returns:
@@ -149,7 +149,7 @@ def get_seed_inventory() -> Dict[str, Dict[str, Any]]:
     }
 
 
-def get_seed_faqs() -> Dict[str, Dict[str, Any]]:
+def get_seed_faqs() -> dict[str, dict[str, Any]]:
     """Generates knowledge base and FAQ seed data.
 
     Returns:
@@ -187,7 +187,7 @@ def get_seed_faqs() -> Dict[str, Dict[str, Any]]:
     }
 
 
-def get_all_seed_data(base_date: Optional[datetime.date] = None) -> Dict[str, Any]:
+def get_all_seed_data(base_date: datetime.date | None = None) -> dict[str, Any]:
     """Returns complete seed dataset across all domains for test fixtures.
 
     Args:
@@ -204,11 +204,11 @@ def get_all_seed_data(base_date: Optional[datetime.date] = None) -> Dict[str, An
 
 
 def seed_firestore(
-    db: Optional[firestore.Client] = None,
-    base_date: Optional[datetime.date] = None,
-    project: Optional[str] = None,
-    database: Optional[str] = None,
-) -> Dict[str, int]:
+    db: firestore.Client | None = None,
+    base_date: datetime.date | None = None,
+    project: str | None = None,
+    database: str | None = None,
+) -> dict[str, int]:
     """Seeds the Firestore database with parameterized initial data.
 
     Args:
@@ -222,7 +222,7 @@ def seed_firestore(
     """
     client = db or get_firestore_client(project=project, database=database)
     data = get_all_seed_data(base_date)
-    counts: Dict[str, int] = {}
+    counts: dict[str, int] = {}
 
     # Seed Orders
     batch = client.batch()
@@ -274,9 +274,11 @@ def main():
     args = parser.parse_args()
 
     ref_date = args.base_date or datetime.date.today()
-    print(f"=== Cymbal Retail Firestore Seeder ===")
+    print("=== Cymbal Retail Firestore Seeder ===")
     print(f"Base Reference Date: {ref_date}")
-    print(f"Target Database: {args.database or os.getenv('FIRESTORE_DATABASE', '(default)')}")
+    print(
+        f"Target Database: {args.database or os.getenv('FIRESTORE_DATABASE', '(default)')}"
+    )
     if args.project:
         print(f"Project ID: {args.project}")
     print()

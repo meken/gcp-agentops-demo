@@ -1,11 +1,10 @@
 import datetime
-
-from typing import Dict, Any
+from typing import Any
 
 from . import database
 
 
-def lookup_order(order_id: str) -> Dict[str, Any]:
+def lookup_order(order_id: str) -> dict[str, Any]:
     """Looks up customer order details by order ID from Firestore.
 
     Args:
@@ -18,13 +17,15 @@ def lookup_order(order_id: str) -> Dict[str, Any]:
     try:
         doc = database.get_orders_collection().document(clean_id).get()
         if not doc.exists:
-            return {"error": f"Order with ID '{order_id}' was not found in the database."}
+            return {
+                "error": f"Order with ID '{order_id}' was not found in the database."
+            }
         return {"status": "SUCCESS", "order": doc.to_dict()}
     except Exception as e:
-        return {"error": f"Database error looking up order '{order_id}': {str(e)}"}
+        return {"error": f"Database error looking up order '{order_id}': {e!s}"}
 
 
-def check_inventory(sku_or_name: str) -> Dict[str, Any]:
+def check_inventory(sku_or_name: str) -> dict[str, Any]:
     """Checks the stock availability and warehouse location for a product from Firestore.
 
     Args:
@@ -36,7 +37,9 @@ def check_inventory(sku_or_name: str) -> Dict[str, Any]:
     clean_query = sku_or_name.strip()
     try:
         # 1. Exact lookup by SKU
-        sku_doc = database.get_inventory_collection().document(clean_query.upper()).get()
+        sku_doc = (
+            database.get_inventory_collection().document(clean_query.upper()).get()
+        )
         if sku_doc.exists:
             return {"status": "SUCCESS", "product": sku_doc.to_dict()}
 
@@ -52,10 +55,12 @@ def check_inventory(sku_or_name: str) -> Dict[str, Any]:
 
         return {"error": f"No product found matching '{sku_or_name}'."}
     except Exception as e:
-        return {"error": f"Database error checking inventory for '{sku_or_name}': {str(e)}"}
+        return {
+            "error": f"Database error checking inventory for '{sku_or_name}': {e!s}"
+        }
 
 
-def process_refund(order_id: str, reason: str, amount: float) -> Dict[str, Any]:
+def process_refund(order_id: str, reason: str, amount: float) -> dict[str, Any]:
     """Processes a return and refund for an eligible delivered customer order in Firestore.
 
     Args:
@@ -85,7 +90,9 @@ def process_refund(order_id: str, reason: str, amount: float) -> Dict[str, Any]:
             }
 
         if order.get("refund_status") == "REFUNDED":
-            return {"error": f"Cannot process refund: Order '{order_id}' has already been refunded."}
+            return {
+                "error": f"Cannot process refund: Order '{order_id}' has already been refunded."
+            }
 
         total_amount = float(order.get("total_amount", 0.0))
         if amount <= 0 or amount > total_amount:
@@ -112,7 +119,7 @@ def process_refund(order_id: str, reason: str, amount: float) -> Dict[str, Any]:
             except (ValueError, TypeError):
                 pass  # Fall back to allowing if date parsing is unparseable
 
-        now_utc = datetime.datetime.now(datetime.timezone.utc)
+        now_utc = datetime.datetime.now(datetime.UTC)
         tx_id = f"REF-{now_utc.strftime('%Y%m%d%H%M%S')}"
 
         # Atomically update order and record transaction
@@ -144,10 +151,10 @@ def process_refund(order_id: str, reason: str, amount: float) -> Dict[str, Any]:
             "message": f"Refund of ${amount:.2f} successfully issued for {clean_id}.",
         }
     except Exception as e:
-        return {"error": f"Database error processing refund for '{order_id}': {str(e)}"}
+        return {"error": f"Database error processing refund for '{order_id}': {e!s}"}
 
 
-def search_product_faq(topic: str) -> Dict[str, Any]:
+def search_product_faq(topic: str) -> dict[str, Any]:
     """Searches Cymbal Retail store policies and frequently asked questions from Firestore.
 
     Args:
@@ -158,12 +165,14 @@ def search_product_faq(topic: str) -> Dict[str, Any]:
     """
     topic_clean = topic.strip().lower().replace(" ", "_")
     try:
-
         # 1. Exact topic document lookup
         doc = database.get_faqs_collection().document(topic_clean).get()
         if doc.exists:
             data = doc.to_dict() or {}
-            return {"topic": data.get("topic", topic_clean), "details": data.get("details", "")}
+            return {
+                "topic": data.get("topic", topic_clean),
+                "details": data.get("details", ""),
+            }
 
         # 2. Substring matching across all FAQ documents
         all_topics = []
@@ -182,4 +191,4 @@ def search_product_faq(topic: str) -> Dict[str, Any]:
             ),
         }
     except Exception as e:
-        return {"error": f"Database error searching FAQ for '{topic}': {str(e)}"}
+        return {"error": f"Database error searching FAQ for '{topic}': {e!s}"}

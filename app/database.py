@@ -1,12 +1,10 @@
 import os
 
-from typing import Optional
-
 from google.cloud import firestore
 from google.cloud.firestore import CollectionReference
 
 # Global cached Firestore client instance
-_db_client: Optional[firestore.Client] = None
+_db_client: firestore.Client | None = None
 
 # Collection name constants
 COLLECTION_ORDERS = "orders"
@@ -30,17 +28,22 @@ def get_db() -> firestore.Client:
         _db_client = firestore.Client(project=project, database=database)
     return _db_client
 
+
 def get_orders_collection() -> CollectionReference:
     return get_db().collection(COLLECTION_ORDERS)
+
 
 def get_inventory_collection() -> CollectionReference:
     return get_db().collection(COLLECTION_INVENTORY)
 
+
 def get_faqs_collection() -> CollectionReference:
     return get_db().collection(COLLECTION_FAQS)
 
+
 def get_refunds_collection() -> CollectionReference:
     return get_db().collection(COLLECTION_REFUNDS)
+
 
 def reset_db_client() -> None:
     """Resets the cached Firestore client instance (useful in tests)."""
