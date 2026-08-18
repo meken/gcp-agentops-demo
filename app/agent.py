@@ -1,5 +1,5 @@
 from google.adk import Agent
-from google.adk import App
+from google.adk.apps import App
 
 from . import tools
 from . import settings
