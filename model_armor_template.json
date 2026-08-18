@@ -1,0 +1,33 @@
+{
+  "name": "projects/{PROJECT_ID}/locations/{LOCATION}/templates/retail-agent-security-template",
+  "displayName": "Cymbal Retail Agent Security Template",
+  "filterConfig": {
+    "piiFilter": {
+      "confidenceLevel": "HIGH",
+      "action": "REDACT",
+      "infoTypes": [
+        "CREDIT_CARD_NUMBER",
+        "US_SOCIAL_SECURITY_NUMBER",
+        "EMAIL_ADDRESS",
+        "PHONE_NUMBER"
+      ]
+    },
+    "promptInjectionFilter": {
+      "confidenceLevel": "HIGH",
+      "action": "BLOCK"
+    },
+    "jailbreakFilter": {
+      "confidenceLevel": "HIGH",
+      "action": "BLOCK"
+    },
+    "harmFilter": {
+      "action": "BLOCK",
+      "categories": [
+        {"category": "HATE_SPEECH", "threshold": "MEDIUM_AND_ABOVE"},
+        {"category": "DANGEROUS_CONTENT", "threshold": "MEDIUM_AND_ABOVE"},
+        {"category": "HARASSMENT", "threshold": "MEDIUM_AND_ABOVE"},
+        {"category": "SEXUALLY_EXPLICIT", "threshold": "MEDIUM_AND_ABOVE"}
+      ]
+    }
+  }
+}
