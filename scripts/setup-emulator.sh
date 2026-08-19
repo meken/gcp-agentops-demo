@@ -74,14 +74,46 @@ fi
 
 # 2. Check if Firestore emulator component is installed
 echo "[1/4] Checking Firestore emulator installation..."
-if ! gcloud emulators firestore --help >/dev/null 2>&1; then
-  echo "      Firestore emulator component is missing. Installing..."
-  if gcloud components install cloud-firestore-emulator --quiet 2>/dev/null; then
-    echo "      Successfully installed cloud-firestore-emulator."
-  else
-    echo "[-] WARNING: 'gcloud components install' failed (package manager managed)."
-    echo "    Attempting to continue or install via package manager if needed:"
-    echo "    sudo apt-get install google-cloud-cli-firestore-emulator"
+SDK_ROOT=$(gcloud info --format="value(installation.sdk_root)" 2>/dev/null || echo "")
+EMULATOR_JAR="${SDK_ROOT}/platform/cloud-firestore-emulator/cloud-firestore-emulator.jar"
+
+if [ ! -f "${EMULATOR_JAR}" ]; then
+  echo "      Firestore emulator component not found. Attempting installation..."
+
+  # Attempt 1: gcloud component manager (for standalone/tarball installations)
+  INSTALL_SUCCESS=false
+  if gcloud components install cloud-firestore-emulator --quiet >/dev/null 2>&1; then
+    INSTALL_SUCCESS=true
+    echo "      Successfully installed cloud-firestore-emulator via gcloud."
+  fi
+
+  # Attempt 2: APT package manager (for Debian/Ubuntu/Cloud Shell APT-managed gcloud)
+  if [ "$INSTALL_SUCCESS" = false ] && command -v apt-get >/dev/null 2>&1; then
+    echo "      gcloud component manager is disabled. Attempting installation via apt..."
+    if [ "$(id -u)" -eq 0 ]; then
+      apt-get update -qq && apt-get install -y -qq google-cloud-cli-firestore-emulator && INSTALL_SUCCESS=true
+    elif command -v sudo >/dev/null 2>&1; then
+      sudo apt-get update -qq && sudo apt-get install -y -qq google-cloud-cli-firestore-emulator && INSTALL_SUCCESS=true
+    fi
+  fi
+
+  # Attempt 3: YUM/DNF package manager (for RedHat/CentOS/Fedora)
+  if [ "$INSTALL_SUCCESS" = false ] && command -v dnf >/dev/null 2>&1; then
+    if [ "$(id -u)" -eq 0 ]; then
+      dnf install -y -q google-cloud-cli-firestore-emulator && INSTALL_SUCCESS=true
+    elif command -v sudo >/dev/null 2>&1; then
+      sudo dnf install -y -q google-cloud-cli-firestore-emulator && INSTALL_SUCCESS=true
+    fi
+  fi
+
+  # Verify if emulator is now present
+  if [ ! -f "${EMULATOR_JAR}" ] && [ "$INSTALL_SUCCESS" = false ]; then
+    echo "[-] ERROR: Failed to automatically install the Firestore emulator component."
+    echo "    Please install it manually using your system package manager:"
+    echo "      sudo apt-get install google-cloud-cli-firestore-emulator"
+    echo "    Or if using tarball gcloud:"
+    echo "      gcloud components install cloud-firestore-emulator"
+    return 1 2>/dev/null || exit 1
   fi
 else
   echo "      Firestore emulator component is installed."
