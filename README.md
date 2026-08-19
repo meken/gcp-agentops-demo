@@ -12,15 +12,15 @@ In order to run the unit tests, you can use the following command:
 uv run pytest -m unit
 ```
 
-The integration tests need a Firestore database. You can start the emulator using the following command:
+The integration tests need a Firestore database. You can automatically check, install, start, and seed the Firestore emulator with:
 
 ```shell
-export FIRESTORE_EMULATOR_HOST=127.0.0.1:8888
-gcloud emulators firestore start --host-port=$FIRESTORE_EMULATOR_HOST
+source ./scripts/setup-emulator.sh
 ```
 
 > [!NOTE]  
-> The tests need the `FIRESTORE_EMULATOR_HOST` in emulation mode, so if you start another shell, make sure to set that variable.
+> Sourcing the script (`source ./scripts/setup-emulator.sh`) sets `FIRESTORE_EMULATOR_HOST=127.0.0.1:8888` in your current shell and seeds it with initial test data.
+
 
 And now you can run the integration tests:
 
@@ -37,3 +37,16 @@ To evaluate the agent end-to-end with the live Gemini model against evaluation d
 ```shell
 uv run pytest -m eval
 ```
+
+## Seeding the Live Google Cloud Database
+
+To seed or reset the live Google Cloud Firestore database in your project:
+
+```shell
+# Uses $GOOGLE_CLOUD_PROJECT
+./scripts/seed-cloud-database.sh
+
+# Or with an explicit project ID:
+./scripts/seed-cloud-database.sh --project your-gcp-project-id
+```
+
