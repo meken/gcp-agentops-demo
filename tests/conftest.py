@@ -9,7 +9,7 @@ import pytest
 
 from google.cloud import firestore
 
-from app import database
+from retail_agent import database
 from tests import seed_data
 
 
@@ -127,10 +127,10 @@ def mock_db_for_evals(request: pytest.FixtureRequest, fixed_base_date: datetime.
     mock_db.batch.return_value = mock_batch
 
     with (
-        patch("app.database.get_orders_collection", return_value=mock_orders_col),
-        patch("app.database.get_inventory_collection", return_value=mock_inv_col),
-        patch("app.database.get_faqs_collection", return_value=mock_faqs_col),
-        patch("app.database.get_refunds_collection", return_value=mock_refunds_col),
-        patch("app.database.get_db", return_value=mock_db),
+        patch("retail_agent.database.get_orders_collection", return_value=mock_orders_col),
+        patch("retail_agent.database.get_inventory_collection", return_value=mock_inv_col),
+        patch("retail_agent.database.get_faqs_collection", return_value=mock_faqs_col),
+        patch("retail_agent.database.get_refunds_collection", return_value=mock_refunds_col),
+        patch("retail_agent.database.get_db", return_value=mock_db),
     ):
         yield

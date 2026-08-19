@@ -8,10 +8,10 @@ import pytest
 from google.adk.evaluation.agent_evaluator import AgentEvaluator
 
 EVALS_DIR = os.path.join(os.path.dirname(__file__), "evals")
-AGENT_MODULE = "app.agent"
+AGENT_MODULE = "retail_agent.agent"
 
-# Ensure environment variables from app/.env are loaded for Vertex AI / GenAI credentials
-dotenv.load_dotenv(Path(__file__).parent.parent / "app" / ".env")
+# Ensure environment variables from retail_agent/.env are loaded for Vertex AI / GenAI credentials
+dotenv.load_dotenv(Path(__file__).parent.parent / "retail_agent" / ".env")
 
 pytestmark = pytest.mark.eval
 

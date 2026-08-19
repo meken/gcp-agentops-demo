@@ -2,7 +2,7 @@ import pytest
 
 from google.cloud import firestore
 
-from app import tools
+from retail_agent import tools
 
 pytestmark = pytest.mark.integration
 
