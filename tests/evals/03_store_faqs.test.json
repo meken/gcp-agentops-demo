@@ -1,0 +1,95 @@
+{
+  "eval_set_id": "store_faqs_eval_set",
+  "name": "Store FAQs Evaluation Set",
+  "description": "Evaluates policy, return window, shipping, and warranty knowledge base inquiries.",
+  "eval_cases": [
+    {
+      "eval_id": "case_01_return_policy_inquiry",
+      "conversation": [
+        {
+          "invocation_id": "inv-01",
+          "user_content": {
+            "role": "user",
+            "parts": [
+              {
+                "text": "What is your return policy and how many days do I have to return an item?"
+              }
+            ]
+          },
+          "final_response": {
+            "role": "model",
+            "parts": [
+              {
+                "text": "Cymbal Retail offers a 30-day money-back guarantee on all delivered items, provided the items are in original condition."
+              }
+            ]
+          },
+          "intermediate_data": {
+            "invocation_events": [
+              {
+                "author": "retail_support_agent",
+                "content": {
+                  "role": "model",
+                  "parts": [
+                    {
+                      "function_call": {
+                        "name": "search_product_faq",
+                        "args": {
+                          "topic": "return_policy"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "eval_id": "case_02_warranty_inquiry",
+      "conversation": [
+        {
+          "invocation_id": "inv-02",
+          "user_content": {
+            "role": "user",
+            "parts": [
+              {
+                "text": "Do your electronics come with a warranty?"
+              }
+            ]
+          },
+          "final_response": {
+            "role": "model",
+            "parts": [
+              {
+                "text": "Yes, all electronics include a standard 1-year limited manufacturer warranty covering defects in materials and workmanship."
+              }
+            ]
+          },
+          "intermediate_data": {
+            "invocation_events": [
+              {
+                "author": "retail_support_agent",
+                "content": {
+                  "role": "model",
+                  "parts": [
+                    {
+                      "function_call": {
+                        "name": "search_product_faq",
+                        "args": {
+                          "topic": "warranty"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

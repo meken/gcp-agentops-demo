@@ -1,0 +1,69 @@
+{
+  "eval_set_id": "refund_processing_eval_set",
+  "name": "Refund Processing Evaluation Set",
+  "description": "Evaluates handling of refund requests according to 30-day delivery policies.",
+  "eval_cases": [
+    {
+      "eval_id": "case_01_eligible_refund_request",
+      "conversation": [
+        {
+          "invocation_id": "inv-01",
+          "user_content": {
+            "role": "user",
+            "parts": [
+              {
+                "text": "I received order ORD-1001 two weeks ago, but the headphones have a defective ear pad. I would like to request a full refund of $199.99."
+              }
+            ]
+          },
+          "final_response": {
+            "role": "model",
+            "parts": [
+              {
+                "text": "Your refund of $199.99 for order ORD-1001 has been approved and processed."
+              }
+            ]
+          },
+          "intermediate_data": {
+            "invocation_events": [
+              {
+                "author": "retail_support_agent",
+                "content": {
+                  "role": "model",
+                  "parts": [
+                    {
+                      "function_call": {
+                        "name": "lookup_order",
+                        "args": {
+                          "order_id": "ORD-1001"
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "author": "retail_support_agent",
+                "content": {
+                  "role": "model",
+                  "parts": [
+                    {
+                      "function_call": {
+                        "name": "process_refund",
+                        "args": {
+                          "amount": 199.99,
+                          "order_id": "ORD-1001",
+                          "reason": "defective ear pad"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

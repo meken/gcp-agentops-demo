@@ -1,0 +1,95 @@
+{
+  "eval_set_id": "inventory_inquiry_eval_set",
+  "name": "Inventory Inquiry Evaluation Set",
+  "description": "Evaluates stock checks and product availability inquiries.",
+  "eval_cases": [
+    {
+      "eval_id": "case_01_check_stock_by_sku",
+      "conversation": [
+        {
+          "invocation_id": "inv-01",
+          "user_content": {
+            "role": "user",
+            "parts": [
+              {
+                "text": "Do you have SKU-KEYBOARD-02 in stock and what is the price?"
+              }
+            ]
+          },
+          "final_response": {
+            "role": "model",
+            "parts": [
+              {
+                "text": "Yes, we have 15 units of the Ergonomic Mechanical Keyboard (SKU-KEYBOARD-02) in stock at $129.50."
+              }
+            ]
+          },
+          "intermediate_data": {
+            "invocation_events": [
+              {
+                "author": "retail_support_agent",
+                "content": {
+                  "role": "model",
+                  "parts": [
+                    {
+                      "function_call": {
+                        "name": "check_inventory",
+                        "args": {
+                          "sku_or_name": "SKU-KEYBOARD-02"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "eval_id": "case_02_check_stock_by_name",
+      "conversation": [
+        {
+          "invocation_id": "inv-02",
+          "user_content": {
+            "role": "user",
+            "parts": [
+              {
+                "text": "Are wireless noise cancelling headphones available?"
+              }
+            ]
+          },
+          "final_response": {
+            "role": "model",
+            "parts": [
+              {
+                "text": "Yes, we have 42 units of Wireless Noise Cancelling Headphones in stock priced at $199.99."
+              }
+            ]
+          },
+          "intermediate_data": {
+            "invocation_events": [
+              {
+                "author": "retail_support_agent",
+                "content": {
+                  "role": "model",
+                  "parts": [
+                    {
+                      "function_call": {
+                        "name": "check_inventory",
+                        "args": {
+                          "sku_or_name": "wireless noise cancelling headphones"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

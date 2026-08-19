@@ -29,3 +29,11 @@ uv run pytest -m integration
 ```
 
 If you don't start the emulator (and not set the `FIRESTORE_EMULATOR_HOST`), the integration tests will use the current configured project and connect to a live (potentially test) database on Google Cloud.
+
+### Running Agent Evaluations
+
+To evaluate the agent end-to-end with the live Gemini model against evaluation datasets:
+
+```shell
+uv run pytest -m eval
+```
