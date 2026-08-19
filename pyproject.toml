@@ -30,3 +30,4 @@ addopts = [
     "--verbose",
     "--durations=0"
 ]
+
