@@ -1,9 +1,14 @@
-"""Unit tests for retail agent tools."""
-
 import datetime
+
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from app import tools
+
+# Marking all tests in this file to be unit tests
+pytestmark = pytest.mark.unit
+
 
 # ---------------------------------------------------------------------------
 # Tests for lookup_order

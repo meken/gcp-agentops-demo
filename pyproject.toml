@@ -30,4 +30,7 @@ addopts = [
     "--verbose",
     "--durations=0"
 ]
+markers = [
+    "unit: Unit tests"
+]
 
