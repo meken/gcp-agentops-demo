@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from app import tools
+from retail_agent import tools
 
 # Marking all tests in this file to be unit tests
 pytestmark = pytest.mark.unit
@@ -29,7 +29,7 @@ def test_lookup_order_success():
     mock_collection = MagicMock()
     mock_collection.document.return_value.get.return_value = mock_doc
 
-    with patch("app.database.get_orders_collection", return_value=mock_collection):
+    with patch("retail_agent.database.get_orders_collection", return_value=mock_collection):
         result = tools.lookup_order("  ord-1001  ")
 
     mock_collection.document.assert_called_once_with("ORD-1001")
@@ -46,7 +46,7 @@ def test_lookup_order_not_found():
     mock_collection = MagicMock()
     mock_collection.document.return_value.get.return_value = mock_doc
 
-    with patch("app.database.get_orders_collection", return_value=mock_collection):
+    with patch("retail_agent.database.get_orders_collection", return_value=mock_collection):
         result = tools.lookup_order("ORD-9999")
 
     assert "error" in result
@@ -60,7 +60,7 @@ def test_lookup_order_exception():
         "Firestore connection timed out"
     )
 
-    with patch("app.database.get_orders_collection", return_value=mock_collection):
+    with patch("retail_agent.database.get_orders_collection", return_value=mock_collection):
         result = tools.lookup_order("ORD-1001")
 
     assert "error" in result
@@ -88,7 +88,7 @@ def test_check_inventory_by_exact_sku():
     mock_collection = MagicMock()
     mock_collection.document.return_value.get.return_value = mock_sku_doc
 
-    with patch("app.database.get_inventory_collection", return_value=mock_collection):
+    with patch("retail_agent.database.get_inventory_collection", return_value=mock_collection):
         result = tools.check_inventory("  sku-headphones-01  ")
 
     mock_collection.document.assert_called_once_with("SKU-HEADPHONES-01")
@@ -121,7 +121,7 @@ def test_check_inventory_by_name_keyword():
     mock_collection.document.return_value.get.return_value = mock_sku_doc
     mock_collection.stream.return_value = [item1_doc, item2_doc]
 
-    with patch("app.database.get_inventory_collection", return_value=mock_collection):
+    with patch("retail_agent.database.get_inventory_collection", return_value=mock_collection):
         result = tools.check_inventory("Headphones")
 
     assert result["status"] == "SUCCESS"
@@ -144,7 +144,7 @@ def test_check_inventory_not_found():
     mock_collection.document.return_value.get.return_value = mock_sku_doc
     mock_collection.stream.return_value = [item1_doc]
 
-    with patch("app.database.get_inventory_collection", return_value=mock_collection):
+    with patch("retail_agent.database.get_inventory_collection", return_value=mock_collection):
         result = tools.check_inventory("Smart Watch")
 
     assert "error" in result
@@ -156,7 +156,7 @@ def test_check_inventory_exception():
     mock_collection = MagicMock()
     mock_collection.document.return_value.get.side_effect = RuntimeError("DB error")
 
-    with patch("app.database.get_inventory_collection", return_value=mock_collection):
+    with patch("retail_agent.database.get_inventory_collection", return_value=mock_collection):
         result = tools.check_inventory("SKU-001")
 
     assert "error" in result
@@ -198,9 +198,9 @@ def test_process_refund_success():
     mock_db.batch.return_value = mock_batch
 
     with (
-        patch("app.database.get_orders_collection", return_value=mock_orders_col),
-        patch("app.database.get_refunds_collection", return_value=mock_refunds_col),
-        patch("app.database.get_db", return_value=mock_db),
+        patch("retail_agent.database.get_orders_collection", return_value=mock_orders_col),
+        patch("retail_agent.database.get_refunds_collection", return_value=mock_refunds_col),
+        patch("retail_agent.database.get_db", return_value=mock_db),
     ):
         result = tools.process_refund(
             "ord-1001", "Defective ear pad", 149.99
@@ -230,7 +230,7 @@ def test_process_refund_order_not_found():
     mock_orders_col = MagicMock()
     mock_orders_col.document.return_value = mock_order_ref
 
-    with patch("app.database.get_orders_collection", return_value=mock_orders_col):
+    with patch("retail_agent.database.get_orders_collection", return_value=mock_orders_col):
         result = tools.process_refund("ORD-9999", "Item broken", 50.0)
 
     assert "error" in result
@@ -252,7 +252,7 @@ def test_process_refund_not_delivered():
     mock_orders_col = MagicMock()
     mock_orders_col.document.return_value = mock_order_ref
 
-    with patch("app.database.get_orders_collection", return_value=mock_orders_col):
+    with patch("retail_agent.database.get_orders_collection", return_value=mock_orders_col):
         result = tools.process_refund("ORD-1002", "Want to cancel", 100.0)
 
     assert "error" in result
@@ -276,7 +276,7 @@ def test_process_refund_already_refunded():
     mock_orders_col = MagicMock()
     mock_orders_col.document.return_value = mock_order_ref
 
-    with patch("app.database.get_orders_collection", return_value=mock_orders_col):
+    with patch("retail_agent.database.get_orders_collection", return_value=mock_orders_col):
         result = tools.process_refund("ORD-1003", "Defective", 100.0)
 
     assert "error" in result
@@ -299,7 +299,7 @@ def test_process_refund_invalid_amount_zero_or_negative():
     mock_orders_col = MagicMock()
     mock_orders_col.document.return_value = mock_order_ref
 
-    with patch("app.database.get_orders_collection", return_value=mock_orders_col):
+    with patch("retail_agent.database.get_orders_collection", return_value=mock_orders_col):
         result_zero = tools.process_refund("ORD-1004", "Reason", 0.0)
         result_neg = tools.process_refund("ORD-1004", "Reason", -10.0)
 
@@ -325,7 +325,7 @@ def test_process_refund_invalid_amount_exceeding_total():
     mock_orders_col = MagicMock()
     mock_orders_col.document.return_value = mock_order_ref
 
-    with patch("app.database.get_orders_collection", return_value=mock_orders_col):
+    with patch("retail_agent.database.get_orders_collection", return_value=mock_orders_col):
         result = tools.process_refund("ORD-1005", "Reason", 50.01)
 
     assert "error" in result
@@ -352,7 +352,7 @@ def test_process_refund_exceeds_30_day_window():
     mock_orders_col = MagicMock()
     mock_orders_col.document.return_value = mock_order_ref
 
-    with patch("app.database.get_orders_collection", return_value=mock_orders_col):
+    with patch("retail_agent.database.get_orders_collection", return_value=mock_orders_col):
         result = tools.process_refund("ORD-1006", "Reason", 100.0)
 
     assert "error" in result
@@ -389,9 +389,9 @@ def test_process_refund_fallback_order_date_and_unparseable():
     mock_db.batch.return_value = mock_batch
 
     with (
-        patch("app.database.get_orders_collection", return_value=mock_orders_col),
-        patch("app.database.get_refunds_collection", return_value=mock_refunds_col),
-        patch("app.database.get_db", return_value=mock_db),
+        patch("retail_agent.database.get_orders_collection", return_value=mock_orders_col),
+        patch("retail_agent.database.get_refunds_collection", return_value=mock_refunds_col),
+        patch("retail_agent.database.get_db", return_value=mock_db),
     ):
         result = tools.process_refund("ORD-1007", "Reason", 100.0)
 
@@ -406,7 +406,7 @@ def test_process_refund_exception_handling():
     mock_orders_col = MagicMock()
     mock_orders_col.document.return_value = mock_order_ref
 
-    with patch("app.database.get_orders_collection", return_value=mock_orders_col):
+    with patch("retail_agent.database.get_orders_collection", return_value=mock_orders_col):
         result = tools.process_refund("ORD-1001", "Reason", 50.0)
 
     assert "error" in result
@@ -430,7 +430,7 @@ def test_search_product_faq_exact_topic():
     mock_col = MagicMock()
     mock_col.document.return_value.get.return_value = mock_faq_doc
 
-    with patch("app.database.get_faqs_collection", return_value=mock_col):
+    with patch("retail_agent.database.get_faqs_collection", return_value=mock_col):
         result = tools.search_product_faq("return policy")
 
     mock_col.document.assert_called_once_with("return_policy")
@@ -454,7 +454,7 @@ def test_search_product_faq_substring_topic():
     mock_col.document.return_value.get.return_value = mock_faq_doc_exact
     mock_col.stream.return_value = [faq_item]
 
-    with patch("app.database.get_faqs_collection", return_value=mock_col):
+    with patch("retail_agent.database.get_faqs_collection", return_value=mock_col):
         result = tools.search_product_faq("warranty")
 
     assert result["topic"] == "warranty_coverage"
@@ -477,7 +477,7 @@ def test_search_product_faq_fallback():
     mock_col.document.return_value.get.return_value = mock_faq_doc_exact
     mock_col.stream.return_value = [faq_item]
 
-    with patch("app.database.get_faqs_collection", return_value=mock_col):
+    with patch("retail_agent.database.get_faqs_collection", return_value=mock_col):
         result = tools.search_product_faq("catering services")
 
     assert result["topic"] == "catering services"
@@ -490,7 +490,7 @@ def test_search_product_faq_exception_handling():
     mock_col = MagicMock()
     mock_col.document.return_value.get.side_effect = RuntimeError("Firestore failure")
 
-    with patch("app.database.get_faqs_collection", return_value=mock_col):
+    with patch("retail_agent.database.get_faqs_collection", return_value=mock_col):
         result = tools.search_product_faq("shipping")
 
     assert "error" in result
