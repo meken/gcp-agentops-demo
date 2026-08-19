@@ -1,32 +1,10 @@
-import datetime
-from collections.abc import Generator
-
 import pytest
+
 from google.cloud import firestore
 
-from app import database, tools
+from app import tools
 
-from . import seed_data
-
-# Marking all tests in this file to be integration tests
 pytestmark = pytest.mark.integration
-
-
-@pytest.fixture(scope="module")
-def db_client() -> Generator[firestore.Client, None, None]:
-    """Provides an active Firestore client for integration tests."""
-    database.reset_db_client()
-    client = database.get_db()
-    yield client
-    database.reset_db_client()
-
-
-@pytest.fixture(autouse=True)
-def seed_test_data(db_client: firestore.Client) -> None:
-    """Seeds the database before each test to guarantee a deterministic state."""
-    # Use fixed base date for deterministic date arithmetic
-    base_date = datetime.date(2026, 8, 18)
-    seed_data.seed_firestore(db=db_client, base_date=base_date)
 
 
 # ---------------------------------------------------------------------------
@@ -34,7 +12,7 @@ def seed_test_data(db_client: firestore.Client) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_order_lookup_real_database_records():
+def test_order_lookup_real_database_records(seeded_db: firestore.Client):
     """Tests looking up existing and non-existing orders in Firestore."""
     # Lookup delivered order
     result = tools.lookup_order("ORD-1001")
@@ -64,10 +42,10 @@ def test_order_lookup_real_database_records():
 # ---------------------------------------------------------------------------
 
 
-def test_refund_atomic_transaction_workflow(db_client: firestore.Client):
+def test_refund_atomic_transaction_workflow(seeded_db: firestore.Client):
     """Tests full refund lifecycle: approval, Firestore batch mutation, audit record creation, and duplicate rejection."""
     # 1. Verify initial order state in database
-    order_ref = db_client.collection("orders").document("ORD-1001")
+    order_ref = seeded_db.collection("orders").document("ORD-1001")
     initial_order = order_ref.get().to_dict()
     assert initial_order is not None
     assert initial_order.get("refund_status") == "NONE"
@@ -91,7 +69,7 @@ def test_refund_atomic_transaction_workflow(db_client: firestore.Client):
     assert updated_order["last_refund_tx"] == tx_id
 
     # 4. Verify new audit document exists in refunds collection
-    refund_doc_ref = db_client.collection("refunds").document(tx_id)
+    refund_doc_ref = seeded_db.collection("refunds").document(tx_id)
     refund_record = refund_doc_ref.get().to_dict()
     assert refund_record is not None
     assert refund_record["transaction_id"] == tx_id
@@ -111,7 +89,9 @@ def test_refund_atomic_transaction_workflow(db_client: firestore.Client):
     assert "already been refunded" in duplicate_attempt["error"]
 
 
-def test_refund_business_rules_against_live_database():
+def test_refund_business_rules_against_live_database(
+    seeded_db: firestore.Client,
+):
     """Tests that business rules are enforced based on live order properties in Firestore."""
     # Cannot refund IN_TRANSIT order (ORD-1002)
     in_transit_result = tools.process_refund(
@@ -142,7 +122,7 @@ def test_refund_business_rules_against_live_database():
 # ---------------------------------------------------------------------------
 
 
-def test_inventory_query_and_streaming_search():
+def test_inventory_query_and_streaming_search(seeded_db: firestore.Client):
     """Tests exact SKU lookup and fallback keyword search across live Firestore inventory documents."""
     # 1. Exact SKU lookup
     exact_res = tools.check_inventory("SKU-KEYBOARD-02")
@@ -172,7 +152,9 @@ def test_inventory_query_and_streaming_search():
 # ---------------------------------------------------------------------------
 
 
-def test_faq_retrieval_and_fallback_across_documents():
+def test_faq_retrieval_and_fallback_across_documents(
+    seeded_db: firestore.Client,
+):
     """Tests exact and fallback FAQ queries against live Firestore FAQ documents."""
     # Exact lookup
     return_faq = tools.search_product_faq("return policy")
