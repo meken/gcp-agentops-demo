@@ -2,6 +2,7 @@ import argparse
 import datetime
 import os
 import sys
+
 from typing import Any
 
 from google.cloud import firestore
@@ -45,7 +46,7 @@ def get_seed_orders(
     Returns:
         Dictionary mapping order IDs to order record dictionaries.
     """
-    ref = base_date or datetime.date.today()
+    ref = base_date or datetime.datetime.now(datetime.UTC).date()
 
     return {
         "ORD-1001": {
@@ -267,13 +268,13 @@ def main():
     )
     parser.add_argument(
         "--base-date",
-        type=lambda s: datetime.datetime.strptime(s, "%Y-%m-%d").date(),
+        type=datetime.date.fromisoformat,
         default=None,
         help="Base reference date (YYYY-MM-DD) for relative date calculations (default: today)",
     )
     args = parser.parse_args()
 
-    ref_date = args.base_date or datetime.date.today()
+    ref_date = args.base_date or datetime.datetime.now(datetime.UTC).date()
     print("=== Cymbal Retail Firestore Seeder ===")
     print(f"Base Reference Date: {ref_date}")
     print(
@@ -292,7 +293,7 @@ def main():
         print("Seeding completed successfully:")
         for col, count in counts.items():
             print(f"  - {col}: {count} documents written")
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"Failed to seed Firestore: {e}", file=sys.stderr)
         sys.exit(1)
 

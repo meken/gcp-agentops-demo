@@ -1,7 +1,13 @@
 import datetime
-from typing import Any
+
+from typing import Any, Literal
 
 from . import database
+
+FAQTopic = Literal[
+    "return_policy", "warranty", "shipping_policy", "international_shipping"
+]
+
 
 
 def lookup_order(order_id: str) -> dict[str, Any]:
@@ -65,7 +71,7 @@ def process_refund(order_id: str, reason: str, amount: float) -> dict[str, Any]:
 
     Args:
         order_id: The unique order identifier (e.g. 'ORD-1001').
-        reason: The reason for requesting a refund.
+        reason: The reason for requesting a refund in lowercase (e.g. 'defective ear pad', 'wrong item').
         amount: The refund amount requested.
 
     Returns:
@@ -108,7 +114,9 @@ def process_refund(order_id: str, reason: str, amount: float) -> dict[str, Any]:
         if delivery_date_str:
             try:
                 delivery_date = datetime.date.fromisoformat(delivery_date_str)
-                days_since_delivery = (datetime.date.today() - delivery_date).days
+                days_since_delivery = (
+                    datetime.datetime.now(datetime.UTC).date() - delivery_date
+                ).days
                 if days_since_delivery > 30:
                     return {
                         "error": (
@@ -154,11 +162,11 @@ def process_refund(order_id: str, reason: str, amount: float) -> dict[str, Any]:
         return {"error": f"Database error processing refund for '{order_id}': {e!s}"}
 
 
-def search_product_faq(topic: str) -> dict[str, Any]:
+def search_product_faq(topic: FAQTopic | str) -> dict[str, Any]:
     """Searches Cymbal Retail store policies and frequently asked questions from Firestore.
 
     Args:
-        topic: The topic to look up (e.g. 'return_policy', 'warranty', 'shipping_policy').
+        topic: The topic identifier. Canonical values: 'return_policy', 'warranty', 'shipping_policy', 'international_shipping'.
 
     Returns:
         A dictionary containing the policy statement and relevant details.

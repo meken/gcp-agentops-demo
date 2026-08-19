@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.115.0",
-    "google-adk>=2.0.0",
+    "google-adk[eval]>=2.0.0",
     "google-cloud-aiplatform[adk,agent_engines,evaluation]>=1.112.0",
     "google-cloud-firestore>=2.19.0",
     "google-genai>=1.0.0",
@@ -20,8 +20,11 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "pytest>=9.1.1"
+    "pytest>=9.1.1",
+    "pytest-asyncio>=0.25.0",
+    "ruff>=0.9.0"
 ]
+
 
 [tool.pytest.ini_options]
 addopts = [
@@ -30,3 +33,24 @@ addopts = [
     "--verbose",
     "--durations=0"
 ]
+markers = [
+    "unit: Unit tests",
+    "integration: (Database) Integration tests",
+    "eval: (Agent) Evaluation tests"
+]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+    "N",   # pep8-naming
+]
+ignore = ["E501"]  # line length
+
+[tool.ruff.lint.isort]
+lines-between-types = 1
