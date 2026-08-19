@@ -31,6 +31,7 @@ addopts = [
     "--durations=0"
 ]
 markers = [
-    "unit: Unit tests"
+    "unit: Unit tests",
+    "integration: (Database) Integration tests"
 ]
 
