@@ -20,6 +20,7 @@ app: FastAPI = get_fast_api_app(
     web=True,
     otel_to_cloud=enable_telemetry,
     gemini_enterprise_app_name=app_name,
+    auto_create_session=True,
 )
 
 

@@ -9,7 +9,7 @@ class GlobalGemini(Gemini):
 
     @cached_property
     def api_client(self) -> Client:
-        return Client(location="global")
+        return Client(location="global", enterprise=True)
 
 
 GEMINI_MODEL = GlobalGemini(model="gemini-3.5-flash")
