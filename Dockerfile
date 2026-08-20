@@ -21,8 +21,8 @@ COPY retail_agent/ ./retail_agent/
 COPY fast_api_app.py .
 
 # Create and switch to unprivileged user
-RUN groupadd -r -g 1000 appuser && \
-    useradd -r -u 1000 -g appuser -d /app -s /sbin/nologin appuser && \
+RUN groupadd -g 1000 appuser && \
+    useradd -u 1000 -g appuser -d /app -s /sbin/nologin appuser && \
     chown -R appuser:appuser /app
 
 USER appuser
