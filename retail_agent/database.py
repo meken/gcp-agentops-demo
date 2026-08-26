@@ -1,5 +1,4 @@
 import os
-import urllib.request
 
 from google.cloud import firestore, resourcemanager_v3
 from google.cloud.firestore import CollectionReference
@@ -15,7 +14,7 @@ COLLECTION_REFUNDS = "refunds"
 
 
 def _resolve_project_id(project_id: str | None) -> str | None:
-    """Firebase expects the project id to be an alphanumeric id, not a project number, 
+    """Firebase expects the project id to be an alphanumeric id, not a project number,
     so this method looks up the project id given a project number.
 
     If the provided project_id is None or is not a number, it's returned as-is.
