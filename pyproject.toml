@@ -29,15 +29,17 @@ dev = [
 
 [tool.pytest.ini_options]
 addopts = [
-    "--disable-warnings", 
+    "--disable-warnings",
     "--no-header", 
     "--verbose",
-    "--durations=0"
+    "--durations=0",
+    "-m not sanitization",
 ]
 markers = [
     "unit: Unit tests",
     "integration: (Database) Integration tests",
-    "eval: (Agent) Evaluation tests"
+    "eval: (Agent) Evaluation tests",
+    "sanitization: (Security) Sanitization and adversarial tests",
 ]
 
 [tool.ruff.lint]
