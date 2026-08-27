@@ -3,10 +3,10 @@
 # Setup, start, and seed Google Cloud Firestore Emulator for Cymbal Retail Agent
 # ==============================================================================
 # Usage:
-#   source ./scripts/setup-emulator.sh               # Starts, exports env, & seeds
-#   ./scripts/setup-emulator.sh                      # Runs as subshell and seeds
-#   ./scripts/setup-emulator.sh --port 8888          # Custom port
-#   ./scripts/setup-emulator.sh --base-date 2026-08-18 # Specific reference date
+#   source ./scripts/start-database-emulator.sh               # Starts, exports env, & seeds
+#   ./scripts/start-database-emulator.sh                      # Runs as subshell and seeds
+#   ./scripts/start-database-emulator.sh --port 8888          # Custom port
+#   ./scripts/start-database-emulator.sh --base-date 2026-08-18 # Specific reference date
 # ==============================================================================
 
 set -e
@@ -90,6 +90,9 @@ if [ ! -f "${EMULATOR_JAR}" ]; then
   # Attempt 2: APT package manager (for Debian/Ubuntu/Cloud Shell APT-managed gcloud)
   if [ "$INSTALL_SUCCESS" = false ] && command -v apt-get >/dev/null 2>&1; then
     echo "      gcloud component manager is disabled. Attempting installation via apt..."
+    if [ -n "${CLOUD_SHELL:-}" ]; then
+      mkdir -p "${HOME}/.cloudshell" && touch "${HOME}/.cloudshell/no-apt-get-warning"
+    fi
     if [ "$(id -u)" -eq 0 ]; then
       apt-get update -qq && apt-get install -y -qq google-cloud-cli-firestore-emulator && INSTALL_SUCCESS=true
     elif command -v sudo >/dev/null 2>&1; then

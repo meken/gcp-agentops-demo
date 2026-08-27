@@ -28,11 +28,11 @@ uv run pytest -m unit
 The integration tests need a Firestore database. You can automatically install, start, and seed the Firestore emulator with:
 
 ```shell
-source ./scripts/setup-emulator.sh
+source ./scripts/start-database-emulator.sh
 ```
 
 > [!NOTE]  
-> Sourcing the script (`source ./scripts/setup-emulator.sh`) sets `FIRESTORE_EMULATOR_HOST=127.0.0.1:8888` in your current shell and seeds it with initial test data.
+> Sourcing the script (`source ./scripts/start-database-emulator.sh`) sets `FIRESTORE_EMULATOR_HOST=127.0.0.1:8888` in your current shell and seeds it with initial test data.
 
 And now you can run the integration tests (the integration tests don't access LLMs):
 
