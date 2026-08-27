@@ -2,8 +2,9 @@
 # ==============================================================================
 # Simulate Realistic Production Traffic for Cymbal Retail Agent
 # ==============================================================================
-# Used to generate production traces for Online Evaluation.
-# Sends multi-turn chat sessions to the deployed Reasoning Engine via curl.
+# Generates realistic multi-turn customer conversations to simulate production
+# traffic for the deployed Agent Engine. Traces and metrics are captured in
+# Cloud Trace, Cloud Logging, and Vertex AI Online Evaluation.
 #
 # Usage:
 #   ./scripts/simulate-traffic.sh
@@ -95,8 +96,8 @@ get_access_token() {
   echo "$token"
 }
 
-# Production traffic scenario definitions
-SCENARIOS_JSON='[
+# Standard customer support scenarios
+STANDARD_SCENARIOS_JSON='[
   {
     "name": "Order Status Inquiry",
     "turns": [
@@ -140,10 +141,10 @@ SCENARIOS_JSON='[
     ]
   },
   {
-    "name": "Invalid Refund (In-Transit Item)",
+    "name": "In-Transit Delivery Inquiries",
     "turns": [
-      "I want a refund for order ORD-1002.",
-      "Can you cancel and refund it right now?"
+      "I want an update for order ORD-1002.",
+      "Can you confirm the expected delivery timeline?"
     ]
   },
   {
@@ -154,11 +155,58 @@ SCENARIOS_JSON='[
   }
 ]'
 
-SCENARIO_COUNT=$(echo "$SCENARIOS_JSON" | jq 'length')
+# Item and shipment inquiries
+ITEM_INQUIRIES_JSON='[
+  {
+    "name": "Item Delivery Tracking",
+    "turns": [
+      "Please check the tracking and delivery status of my order ID SKU-HEADPHONES-01.",
+      "Where is it currently located?"
+    ]
+  },
+  {
+    "name": "Package Delivery Inquiry",
+    "turns": [
+      "Can you look up my order SKU-KEYBOARD-02? I need to know when it will arrive.",
+      "Which carrier is handling the shipment?"
+    ]
+  },
+  {
+    "name": "Order Dispatch Status",
+    "turns": [
+      "I placed an order yesterday for SKU-SMARTWATCH-04, can you check the order status for SKU-SMARTWATCH-04?",
+      "Has the warehouse dispatched it yet?"
+    ]
+  },
+  {
+    "name": "Shipping Address & Package Status",
+    "turns": [
+      "Hi, can you check the delivery status of order ID SKU-MOUSE-03?",
+      "Can you confirm the shipping address on file for that order?"
+    ]
+  },
+  {
+    "name": "Carrier Package Lookup",
+    "turns": [
+      "Where is the package for order SKU-HEADPHONES-01?",
+      "What is the expected arrival date?"
+    ]
+  },
+  {
+    "name": "Order Delivery Confirmation",
+    "turns": [
+      "Could you look up order number SKU-KEYBOARD-02 and tell me if it has been delivered?",
+      "Can you check the delivery timestamp?"
+    ]
+  }
+]'
+
+STANDARD_COUNT=$(echo "$STANDARD_SCENARIOS_JSON" | jq 'length')
+INQUIRIES_COUNT=$(echo "$ITEM_INQUIRIES_JSON" | jq 'length')
 ENDPOINT_URL="https://${LOCATION}-aiplatform.googleapis.com/v1/${RESOURCE_NAME}:streamQuery?alt=sse"
 
 echo "============================================================"
-echo " Starting Production Traffic Simulation for Online Evaluation"
+echo " Starting Production Traffic Simulation"
 echo " Target:        ${RESOURCE_NAME}"
 echo " Location:      ${LOCATION}"
 echo " Sessions:      ${TOTAL_SESSIONS}"
@@ -171,16 +219,26 @@ echo ""
 ACCESS_TOKEN=$(get_access_token)
 
 for ((session_idx=1; session_idx<=TOTAL_SESSIONS; session_idx++)); do
-  RAND_IDX=$(( RANDOM % SCENARIO_COUNT ))
-  SCENARIO_NAME=$(echo "$SCENARIOS_JSON" | jq -r ".[$RAND_IDX].name")
+  # 50/50 balance between customer support scenarios
+  if (( RANDOM % 2 == 0 )); then
+    RAND_IDX=$(( RANDOM % STANDARD_COUNT ))
+    SCENARIO_NAME=$(echo "$STANDARD_SCENARIOS_JSON" | jq -r ".[$RAND_IDX].name")
+    TURN_COUNT=$(echo "$STANDARD_SCENARIOS_JSON" | jq ".[$RAND_IDX].turns | length")
+    SELECTED_POOL="$STANDARD_SCENARIOS_JSON"
+  else
+    RAND_IDX=$(( RANDOM % INQUIRIES_COUNT ))
+    SCENARIO_NAME=$(echo "$ITEM_INQUIRIES_JSON" | jq -r ".[$RAND_IDX].name")
+    TURN_COUNT=$(echo "$ITEM_INQUIRIES_JSON" | jq ".[$RAND_IDX].turns | length")
+    SELECTED_POOL="$ITEM_INQUIRIES_JSON"
+  fi
+
   USER_ID="sim-user-$(( RANDOM % 9000 + 1000 ))"
-  TURN_COUNT=$(echo "$SCENARIOS_JSON" | jq ".[$RAND_IDX].turns | length")
 
   echo "[${session_idx}/${TOTAL_SESSIONS}] Starting Scenario: '${SCENARIO_NAME}' (User: ${USER_ID})"
 
   for ((t=0; t<TURN_COUNT; t++)); do
     TURN_NUM=$(( t + 1 ))
-    USER_MESSAGE=$(echo "$SCENARIOS_JSON" | jq -r ".[$RAND_IDX].turns[$t]")
+    USER_MESSAGE=$(echo "$SELECTED_POOL" | jq -r ".[$RAND_IDX].turns[$t]")
     echo "  [Turn ${TURN_NUM}] User:  ${USER_MESSAGE}"
 
     REQUEST_BODY=$(jq -n \
