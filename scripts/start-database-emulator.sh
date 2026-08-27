@@ -61,11 +61,28 @@ EMULATOR_TARGET="${HOST}:${PORT}"
 EMULATOR_URL="http://${EMULATOR_TARGET}"
 
 echo "============================================================"
-echo " Firestore Emulator Setup & Idempotent Seeder"
+echo " Start and Seed Firestore Emulator 
 echo " Target: ${EMULATOR_TARGET}"
 echo "============================================================"
 
-# 1. Verify Java Runtime (required by Firestore emulator)
+# 1. Locate Python virtual environment binary (active venv or local .venv)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+if [ -n "${VIRTUAL_ENV:-}" ] && [ -x "${VIRTUAL_ENV}/bin/python" ]; then
+  PYTHON_BIN="${VIRTUAL_ENV}/bin/python"
+elif [ -x "${REPO_ROOT}/.venv/bin/python" ]; then
+  PYTHON_BIN="${REPO_ROOT}/.venv/bin/python"
+elif [ -x ".venv/bin/python" ]; then
+  PYTHON_BIN=".venv/bin/python"
+else
+  echo "[-] ERROR: Python virtual environment not found."
+  echo "    Please create a virtual environment (.venv) or activate an existing one:"
+  echo "      source .venv/bin/activate"
+  return 1 2>/dev/null || exit 1
+fi
+
+# 2. Verify Java Runtime (required by Firestore emulator)
 if ! command -v java >/dev/null 2>&1; then
   echo "[-] ERROR: Java (JRE/JDK) is required to run the Firestore emulator but was not found."
   echo "    Please install Java: sudo apt-get install default-jre"
@@ -163,7 +180,7 @@ echo "[3/4] Exported FIRESTORE_EMULATOR_HOST=${FIRESTORE_EMULATOR_HOST}"
 
 # 5. Idempotent Data Seeding
 echo "[4/4] Seeding Firestore with initial dataset (idempotent upsert)..."
-SEED_CMD=(uv run python -m tests.seed_data)
+SEED_CMD=("${PYTHON_BIN}" -m tests.seed_data)
 if [ -n "$BASE_DATE" ]; then
   SEED_CMD+=(--base-date "$BASE_DATE")
 fi
