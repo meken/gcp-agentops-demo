@@ -11,11 +11,16 @@ enable_telemetry = os.getenv(
 # Base directory where agent folders are located
 agents_dir = os.path.dirname(os.path.abspath(__file__))
 
+# App name for Gemini Enterprise / Agent Runtime Reasoning Engine adapter routes
+app_name = os.getenv("GOOGLE_CLOUD_AGENT_ENGINE_APP_NAME", "retail_agent")
+
 # Build unified FastAPI app with ADK routes and reasoning engine contract
 app: FastAPI = get_fast_api_app(
     agents_dir=agents_dir,
     web=True,
     otel_to_cloud=enable_telemetry,
+    gemini_enterprise_app_name=app_name,
+    auto_create_session=True,
 )
 
 

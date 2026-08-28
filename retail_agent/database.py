@@ -1,6 +1,6 @@
 import os
 
-from google.cloud import firestore
+from google.cloud import firestore, resourcemanager_v3
 from google.cloud.firestore import CollectionReference
 
 # Global cached Firestore client instance
@@ -13,6 +13,18 @@ COLLECTION_FAQS = "faqs"
 COLLECTION_REFUNDS = "refunds"
 
 
+def _resolve_project_id(project_id: str | None) -> str | None:
+    """Firebase expects the project id to be an alphanumeric id, not a project number,
+    so this method looks up the project id given a project number.
+
+    If the provided project_id is None or is not a number, it's returned as-is.
+    """
+    if project_id and project_id.isdigit():
+        client = resourcemanager_v3.ProjectsClient()
+        project = client.get_project(name=f"projects/{project_id}")
+        return project.project_id
+    return project_id
+
 def get_db() -> firestore.Client:
     """Returns a singleton Firestore client instance.
 
@@ -23,7 +35,7 @@ def get_db() -> firestore.Client:
     """
     global _db_client
     if _db_client is None:
-        project = os.getenv("GOOGLE_CLOUD_PROJECT")
+        project = _resolve_project_id(os.getenv("GOOGLE_CLOUD_PROJECT"))
         database = os.getenv("FIRESTORE_DATABASE", "(default)")
         _db_client = firestore.Client(project=project, database=database)
     return _db_client

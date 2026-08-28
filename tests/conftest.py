@@ -26,7 +26,7 @@ def seed_dataset(fixed_base_date: datetime.date) -> dict[str, Any]:
 
 
 @pytest.fixture(scope="module")
-def db_client() -> Generator[firestore.Client, None, None]:
+def db_client() -> Generator[firestore.Client]:
     """Provides an active Firestore client for database tests."""
     database.reset_db_client()
     client = database.get_db()

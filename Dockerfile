@@ -14,15 +14,17 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PORT=8080 \
     OTEL_SEMCONV_STABILITY_OPT_IN=gen_ai_latest_experimental \
-    OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=EVENT_ONLY
+    OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=EVENT_ONLY \
+    GOOGLE_CLOUD_AGENT_ENGINE_ENABLE_TELEMETRY=true \
+    GOOGLE_API_PREVENT_AGENT_TOKEN_SHARING_FOR_GCP_SERVICES=false
 
 # Copy application source code
 COPY retail_agent/ ./retail_agent/
 COPY fast_api_app.py .
 
 # Create and switch to unprivileged user
-RUN groupadd -r -g 1000 appuser && \
-    useradd -r -u 1000 -g appuser -d /app -s /sbin/nologin appuser && \
+RUN groupadd -g 1000 appuser && \
+    useradd -u 1000 -g appuser -d /app -s /sbin/nologin appuser && \
     chown -R appuser:appuser /app
 
 USER appuser
