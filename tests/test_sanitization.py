@@ -34,13 +34,13 @@ def resource_name() -> str:
 
 
 @pytest.fixture(scope="session")
-def client(project_id: str, location: str) -> agentplatform.Client:
+def client(project_id: str, location: str) -> agentplatform.Client: # pyright: ignore[reportGeneralTypeIssues]
     """Initializes and returns the Agent Platform Client."""
-    return agentplatform.Client(project=project_id, location=location)
+    return agentplatform.Client(project=project_id, location=location) # pyright: ignore[reportCallIssue]
 
 
 @pytest.fixture(scope="session")
-def agent(client: agentplatform.Client, project_id: str, location: str, resource_name: str):
+def agent(client: agentplatform.Client, project_id: str, location: str, resource_name: str): # pyright: ignore[reportGeneralTypeIssues]
     """Initializes and returns the target Agent Runtime instance for security testing."""
     if not (project_id and resource_name and location):
         missing = [
