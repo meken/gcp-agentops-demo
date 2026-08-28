@@ -61,7 +61,7 @@ EMULATOR_TARGET="${HOST}:${PORT}"
 EMULATOR_URL="http://${EMULATOR_TARGET}"
 
 echo "============================================================"
-echo " Start and Seed Firestore Emulator 
+echo " Start and Seed Firestore Emulator"
 echo " Target: ${EMULATOR_TARGET}"
 echo "============================================================"
 
