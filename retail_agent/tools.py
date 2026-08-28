@@ -162,6 +162,7 @@ def process_refund(order_id: str, reason: str, amount: float) -> dict[str, Any]:
         return {"error": f"Database error processing refund for '{order_id}': {e!s}"}
 
 
+# This is a very simplistic search, typically you'd use a RAG for this
 def search_product_faq(topic: FAQTopic | str) -> dict[str, Any]:
     """Searches Cymbal Retail store policies and frequently asked questions from Firestore.
 

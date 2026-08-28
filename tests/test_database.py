@@ -1,3 +1,5 @@
+import os
+
 import pytest
 
 from google.cloud import firestore
@@ -5,6 +7,16 @@ from google.cloud import firestore
 from retail_agent import tools
 
 pytestmark = pytest.mark.integration
+
+
+@pytest.fixture(autouse=True, scope="module")
+def check_database_env():
+    """Validates that the Firestore emulator is configured."""
+    emulator_host = os.environ.get("FIRESTORE_EMULATOR_HOST", "")
+    if not emulator_host:
+        pytest.skip(
+            "Please set FIRESTORE_EMULATOR_HOST (start emulator with source ./scripts/start-database-emulator.sh)"
+        )
 
 
 # ---------------------------------------------------------------------------
