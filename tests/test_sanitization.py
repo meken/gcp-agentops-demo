@@ -2,9 +2,9 @@ import os
 
 from typing import Any
 
+import agentplatform
 import pytest
 
-from agentplatform import Client
 from google.genai.errors import ClientError
 
 pytestmark = pytest.mark.sanitization
@@ -34,13 +34,13 @@ def resource_name() -> str:
 
 
 @pytest.fixture(scope="session")
-def client(project_id: str, location: str) -> Client:
+def client(project_id: str, location: str) -> agentplatform.Client:
     """Initializes and returns the Agent Platform Client."""
-    return Client(project=project_id, location=location)
+    return agentplatform.Client(project=project_id, location=location)
 
 
 @pytest.fixture(scope="session")
-def agent(client: Client, project_id: str, location: str, resource_name: str):
+def agent(client: agentplatform.Client, project_id: str, location: str, resource_name: str):
     """Initializes and returns the target Agent Runtime instance for security testing."""
     if not (project_id and resource_name and location):
         missing = [
@@ -53,7 +53,7 @@ def agent(client: Client, project_id: str, location: str, resource_name: str):
         pytest.skip(
             f"Please set the required environment variables: {', '.join(missing)}"
         )
-    return client.agent_engines.get(name=resource_name)
+    return client.runtimes.get(name=resource_name)
 
 
 @pytest.fixture
