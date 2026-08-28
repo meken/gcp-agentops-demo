@@ -10,10 +10,28 @@ from google.adk.evaluation.agent_evaluator import AgentEvaluator
 EVALS_DIR = os.path.join(os.path.dirname(__file__), "evals")
 AGENT_MODULE = "retail_agent.agent"
 
-# Ensure environment variables from retail_agent/.env are loaded for Vertex AI / GenAI credentials
-dotenv.load_dotenv(Path(__file__).parent.parent / "retail_agent" / ".env")
+dotenv.load_dotenv(Path(__file__).parent / ".env")
 
 pytestmark = pytest.mark.eval
+
+
+@pytest.fixture(autouse=True, scope="module")
+def check_eval_env():
+    """Validates required environment variables for evaluation tests."""
+    project_id = os.environ.get("GOOGLE_CLOUD_PROJECT", "")
+    use_enterprise = os.environ.get("GOOGLE_GENAI_USE_ENTERPRISE", "")
+    if not (project_id and use_enterprise):
+        missing = [
+            var
+            for var, val in [
+                ("GOOGLE_GENAI_USE_ENTERPRISE", use_enterprise),
+                ("GOOGLE_CLOUD_PROJECT", project_id),
+            ]
+            if not val
+        ]
+        pytest.skip(
+            f"Please set {', '.join(missing)} (export or add to tests/.env)"
+        )
 
 
 @pytest.mark.asyncio

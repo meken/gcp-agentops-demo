@@ -43,13 +43,15 @@ def client(project_id: str, location: str) -> Client:
 def agent(client: Client, project_id: str, location: str, resource_name: str):
     """Initializes and returns the target Agent Runtime instance for security testing."""
     if not (project_id and resource_name and location):
+        missing = [
+            var for var, val in [
+                ("GOOGLE_CLOUD_PROJECT", project_id),
+                ("GOOGLE_CLOUD_LOCATION", location),
+                ("AGENT_RESOURCE_NAME", resource_name),
+            ] if not val
+        ]
         pytest.skip(
-            """
-            Please set the following environment variables:
-            GOOGLE_CLOUD_PROJECT
-            GOOGLE_CLOUD_LOCATION
-            AGENT_RESOURCE_NAME
-            """
+            f"Please set the required environment variables: {', '.join(missing)}"
         )
     return client.agent_engines.get(name=resource_name)
 
