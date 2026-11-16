@@ -1,0 +1,7 @@
+name: cymbal-retail-support-agent
+agent_directory: retail_agent
+language: python
+base_template: adk_python
+framework: google-adk
+create_params:
+  root_agent_name: retail_support_agent
